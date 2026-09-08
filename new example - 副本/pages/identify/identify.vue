@@ -1,877 +1,920 @@
 <template>
-  <view class="content">
-    <!-- 标题和返回按钮区域 --> 
-    <view class="header-container">
-      <view class="back-button" @click="$emit('goToHomepage1')">
-        <image src="/static/back.png" class="back-icon"></image>
-      </view>
-      <!-- 标题 -->
-      <view class="title">图片识别</view>
-      <view class="header-placeholder"></view> <!-- 占位元素，保持标题居中 -->
-    </view>
-    
-    <!-- 上传区域 -->
-    <view class="upload-container">
-      <!-- 上传按钮 -->
-      <view class="upload-btn-wrapper">
-        <view class="upload-btn" @click="chooseImage">
-          <view class="upload-icon-wrapper">
-            <image src="/static/photo.png" class="upload-icon"></image>
-          </view>
-          <text class="upload-text">点击上传图片</text>
-          <text class="upload-subtext">支持JPG、PNG格式，最多9张</text>
+  <view class="identify yl-page">
+    <yl-navbar title="植物识别" border>
+      <template #right>
+        <view class="identify__nav-btn" hover-class="yl-hover" @click="goHistory">
+          <uni-icons type="calendar" size="20" color="#1A1F1C"></uni-icons>
         </view>
-      </view>
-      
-      <!-- 已选择的图片预览 -->
-      <!-- 在image-list-title下方添加滑动提示箭头 -->
-      <view class="image-list" v-if="imageList.length > 0">
-        <text class="image-list-title">已选择 {{ imageList.length }} 张图片</text>
-        <!-- 添加滑动提示 -->
-        <text class="swipe-hint" v-if="imageList.length > 3">← 左右滑动查看更多 →</text>
-        <view class="images-wrapper">
-          <!-- 图片项内容保持不变 -->
-          <view class="image-item" v-for="(image, index) in imageList" :key="index">
-            <image :src="image" class="preview-image" mode="aspectFill"></image>
-            <view class="delete-btn" @click="deleteImage(index)">
-              <text class="delete-icon">×</text>
-            </view>
-          </view>
-        </view>
-      </view>
-      
-      <!-- 上传进度条 -->
-      <view class="progress-container" v-if="uploading">
-        <view class="progress-header">
-          <text class="progress-text">上传中...</text>
-          <text class="progress-percentage">{{ uploadProgress }}%</text>
-        </view>
-        <view class="progress-bar">
-          <view class="progress-track"></view>
-          <view class="progress-fill" :style="{ width: uploadProgress + '%' }"></view>
-          <view class="progress-ball" :style="{ left: uploadProgress + '%' }"></view>
-        </view>
-      </view>
-      
-      <!-- 上传到服务器按钮 -->
-      <button class="submit-btn" @click="uploadImages" :disabled="imageList.length === 0 || uploading">
-        <text class="submit-btn-text">{{ uploading ? '上传中...' : '开始识别' }}</text>
-      </button>
-    </view>
-    
-    <!-- 上传历史记录 -->
-    <view class="history-container" v-if="uploadHistory.length > 0">
-      <view class="history-header">
-        <text class="history-title">最近上传</text>
-        <text class="history-tip">点击图片查看识别结果</text>
-      </view>
-      <view class="history-list">
-        <view class="history-item" v-for="(item, index) in uploadHistory" :key="index" @click="showHistoryResult(index)">
-          <image :src="item.url" class="history-image" mode="aspectFill"></image>
-          <view class="history-overlay">
-            <text class="history-info">{{ item.time }}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-    
-    <!-- 识别结果展示区域 -->
-    <view class="recognition-container" v-if="selectedResult || recognitionResults.length > 0">
-      <text class="recognition-title">识别结果</text>
-      <view class="recognition-list">
-        <view class="recognition-card" v-if="selectedResult">
-          <view class="card-header">
-            <image :src="selectedResult.imageUrl" class="card-image" mode="aspectFill"></image>
-            <view class="card-info">
+      </template>
+    </yl-navbar>
 
+    <view class="yl-container identify__body">
+      <!-- ===================== 选择阶段 ===================== -->
+      <block v-if="!results.length">
+        <!-- 引导卡片 -->
+        <view class="intro yl-anim-up">
+          <view class="intro__orb intro__orb--1"></view>
+          <view class="intro__orb intro__orb--2"></view>
+          <view class="intro__text">
+            <text class="intro__title">上传植物照片</text>
+            <text class="intro__desc">支持拍照或从相册选择，一次最多 9 张，AI 将给出前 5 个候选物种及置信度</text>
+          </view>
+          <view class="intro__icon">
+            <uni-icons type="scan" size="46" color="#FFFFFF"></uni-icons>
+          </view>
+        </view>
+
+        <!-- 两个入口 -->
+        <view class="pick yl-anim-up yl-delay-1">
+          <view class="pick__btn" hover-class="yl-press" hover-stay-time="80" @click="choose('camera')">
+            <view class="pick__icon pick__icon--green">
+              <uni-icons type="camera-filled" size="30" color="#1DA462"></uni-icons>
+            </view>
+            <text class="pick__title">拍照识别</text>
+            <text class="pick__desc">打开相机现场拍摄</text>
+          </view>
+          <view class="pick__btn" hover-class="yl-press" hover-stay-time="80" @click="choose('album')">
+            <view class="pick__icon pick__icon--blue">
+              <uni-icons type="images-filled" size="30" color="#3B82F6"></uni-icons>
+            </view>
+            <text class="pick__title">相册选择</text>
+            <text class="pick__desc">从图库挑选照片</text>
+          </view>
+        </view>
+
+        <!-- 已选图片 -->
+        <view v-if="images.length" class="sel yl-anim-up">
+          <view class="sel__head">
+            <text class="sel__title">已选择 {{ images.length }} 张</text>
+            <view class="sel__clear" hover-class="yl-hover" @click="images = []">
+              <uni-icons type="trash" size="14" color="#9AA5A0"></uni-icons>
+              <text>清空</text>
             </view>
           </view>
-          <view class="card-results">
-            <view class="result-item" v-for="item in selectedResult.results" :key="item.class">
-              <text class="result-class">{{ item.class }}</text>
-              <view class="confidence-wrapper">
-                <text class="confidence-text">{{ (item.confidence * 100).toFixed(0) }}%</text>
-                <view class="confidence-bar">
-                  <view class="confidence-fill" :style="{ width: (item.confidence * 100) + '%', backgroundColor: getConfidenceColor(item.confidence) }"></view>
+          <view class="sel__grid">
+            <view v-for="(img, i) in images" :key="img + i" class="sel__item">
+              <image class="sel__img" :src="img" mode="aspectFill" @click="preview(img)"></image>
+              <view class="sel__remove" @click.stop="removeImage(i)">
+                <uni-icons type="closeempty" size="14" color="#FFFFFF"></uni-icons>
+              </view>
+              <view v-if="uploading && i === currentIndex" class="sel__mask">
+                <view class="yl-spinner sel__spinner"></view>
+              </view>
+              <view v-else-if="uploading && i < currentIndex" class="sel__done">
+                <uni-icons type="checkmarkempty" size="14" color="#FFFFFF"></uni-icons>
+              </view>
+            </view>
+            <view v-if="images.length < 9 && !uploading" class="sel__item sel__add" hover-class="yl-press" @click="choose('album')">
+              <uni-icons type="plusempty" size="30" color="#9AA5A0"></uni-icons>
+              <text>添加</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 进度 -->
+        <view v-if="uploading" class="progress yl-anim-in">
+          <view class="progress__head">
+            <text class="progress__text">正在识别第 {{ currentIndex + 1 }} / {{ images.length }} 张</text>
+            <text class="progress__pct">{{ overallProgress }}%</text>
+          </view>
+          <view class="progress__bar">
+            <view class="progress__fill" :style="{ width: overallProgress + '%' }"></view>
+          </view>
+          <text class="progress__hint">{{ fileProgress < 100 ? '上传图片中…' : '模型推理中，请稍候…' }}</text>
+        </view>
+
+        <button
+          v-if="images.length"
+          class="yl-btn yl-btn--primary identify__submit"
+          :disabled="uploading"
+          hover-class="yl-press"
+          @click="start"
+        >
+          <view v-if="uploading" class="yl-spinner identify__spinner"></view>
+          <text>{{ uploading ? '识别中…' : `开始识别（${images.length} 张）` }}</text>
+        </button>
+
+        <!-- 小贴士 -->
+        <view class="tips yl-anim-up yl-delay-2">
+          <view class="tips__row">
+            <uni-icons type="checkmarkempty" size="14" color="#1DA462"></uni-icons>
+            <text>让植物主体尽量占满画面，背景简洁</text>
+          </view>
+          <view class="tips__row">
+            <uni-icons type="checkmarkempty" size="14" color="#1DA462"></uni-icons>
+            <text>对准叶片、孢子体等特征部位，保持对焦清晰</text>
+          </view>
+          <view class="tips__row">
+            <uni-icons type="checkmarkempty" size="14" color="#1DA462"></uni-icons>
+            <text>避免逆光与强反光，光线均匀时效果更好</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- ===================== 结果阶段 ===================== -->
+      <block v-else>
+        <view class="results__head yl-anim-up">
+          <view>
+            <text class="results__title">识别结果</text>
+            <text class="results__sub">共 {{ results.length }} 张 · {{ successCount }} 张成功，已保存至记录</text>
+          </view>
+          <view class="results__badge">
+            <uni-icons type="checkmarkempty" size="14" color="#146C43"></uni-icons>
+            <text>完成</text>
+          </view>
+        </view>
+
+        <view v-for="(r, i) in results" :key="i" class="result yl-anim-up" :class="'yl-delay-' + Math.min(i + 1, 5)">
+          <view class="result__top">
+            <image class="result__img" :src="r.image" mode="aspectFill" @click="preview(r.image)"></image>
+
+            <view v-if="!r.error" class="result__best">
+              <text class="result__label">最可能是</text>
+              <text class="result__name">{{ r.best.class }}</text>
+              <view class="result__conf">
+                <view class="ring" :style="ringStyle(r.best.confidence)">
+                  <view class="ring__inner">
+                    <text class="ring__pct" :style="{ color: level(r.best.confidence).color }">{{ percent(r.best.confidence) }}%</text>
+                  </view>
+                </view>
+                <view class="result__conf-text">
+                  <text class="result__level" :style="{ color: level(r.best.confidence).color }">置信度 · {{ level(r.best.confidence).text }}</text>
+                  <text class="result__hint">{{ hintFor(r.best.confidence) }}</text>
                 </view>
               </view>
             </view>
+
+            <view v-else class="result__best">
+              <text class="result__label">识别失败</text>
+              <text class="result__err">{{ r.error }}</text>
+              <view class="result__retry" hover-class="yl-press" @click="retry(i)">
+                <uni-icons type="refreshempty" size="14" color="#146C43"></uni-icons>
+                <text>重试</text>
+              </view>
+            </view>
+          </view>
+
+          <view v-if="r.results.length > 1" class="result__list">
+            <text class="result__list-title">全部候选</text>
+            <view v-for="(it, j) in r.results" :key="j" class="result__row">
+              <view class="result__rank" :class="{ 'is-top': j === 0 }">
+                <text>{{ j + 1 }}</text>
+              </view>
+              <text class="result__class yl-ellipsis">{{ it.class }}</text>
+              <view class="result__bar">
+                <view class="result__fill" :style="{ width: percent(it.confidence) + '%', background: level(it.confidence).color }"></view>
+              </view>
+              <text class="result__pct" :style="{ color: level(it.confidence).color }">{{ percent(it.confidence) }}%</text>
+            </view>
           </view>
         </view>
-      </view>
+
+        <view class="results__actions">
+          <button class="yl-btn yl-btn--light results__btn" hover-class="yl-press" @click="reset">
+            <uni-icons type="camera" size="18" color="#146C43"></uni-icons>
+            <text class="results__btn-text">再识别一批</text>
+          </button>
+          <button class="yl-btn yl-btn--primary results__btn" hover-class="yl-press" @click="goHistory">
+            <uni-icons type="calendar-filled" size="18" color="#FFFFFF"></uni-icons>
+            <text class="results__btn-text">查看识别记录</text>
+          </button>
+        </view>
+      </block>
+
+      <view class="yl-safe-bottom" style="height: 40rpx"></view>
     </view>
   </view>
 </template>
 
 <script>
-import API_CONFIG from '../../utils/apiConfig.js';
-  export default {
-    data() {
-      return {
-        // 存储选择的图片列表
-        imageList: [],
-        // 上传进度
-        uploadProgress: 0,
-        // 是否正在上传
-        uploading: false,
-        // 上传历史记录
-        uploadHistory: [],
-        
-        // 所有历史识别结果
-        recognitionResults: [],
-        // 当前上传的识别结果
-        currentRecognitionResults: [],
-        // 当前选中的识别结果（用于显示点击历史图片后的结果）
-        selectedResult: null
-      };
-    },
-    onLoad() {
-      // 页面加载时，从本地存储获取历史记录
-      this.loadHistory();
-    },
-    methods: {
-      // 返回按钮功能
-      
-      // 选择图片
-      chooseImage() {
-        // 计算还能选择多少张图片（最多9张）
-        const maxCount = 9 - this.imageList.length;
-        
-        if (maxCount <= 0) {
-          uni.showToast({
-            title: '最多只能上传9张图片',
-            icon: 'none'
-          });
-          return;
-        }
-        
-        uni.chooseImage({
-          count: maxCount,
-          sizeType: ['compressed'], // 压缩图片
-          sourceType: ['album', 'camera'], // 从相册选择或拍照
-          success: (res) => {
-            // 将选择的图片添加到列表中
-            this.imageList = [...this.imageList, ...res.tempFilePaths];
-          },
-          fail: (err) => {
-            console.error('选择图片失败:', err);
-          }
-        });
-      },
-      
-      // 删除图片
-      deleteImage(index) {
-        uni.showModal({
-          title: '提示',
-          content: '确定要删除这张图片吗？',
-          success: (res) => {
-            if (res.confirm) {
-              this.imageList.splice(index, 1);
-            }
-          }
-        });
-      },
-      
-      // 上传图片到服务器
-      uploadImages() {
-        if (this.imageList.length === 0) {
-          uni.showToast({
-            title: '请先选择图片',
-            icon: 'none'
-          });
-          return;
-        }
-        
-        // 清空当前上传的识别结果
-        this.currentRecognitionResults = [];
-        // 清空选中的结果，确保显示新上传的结果
-        this.selectedResult = null;
-        
-        this.uploading = true;
-        this.uploadProgress = 0;
-        
-        uni.showLoading({
-          title: '正在上传...'
-        });
-        
-        // 获取存储的token
-        const token = uni.getStorageSync('token');
-        
-        // 逐个上传图片
-        let uploadedCount = 0;
-        //固定为FastAPI后端的实际地址，确保与后端的配置一致
-        const apiUrl = API_CONFIG.baseUrl + API_CONFIG.uploadImage;
+import { uploadImage } from '@/utils/api.js'
+import { addRecord, persistImage, confidenceLevel, percent } from '@/utils/history.js'
 
-        this.imageList.forEach((filePath, index) => {
-          uni.uploadFile({
-            url:apiUrl,
-            filePath: filePath,
-            name: 'file',
-            header: {
-              'Authorization': `Bearer ${token}`
-            },
-            success: (uploadFileRes) => {
-              // 在 uploadFile 的 success 回调中添加
-              console.log('上传成功:', uploadFileRes.data);
-              const responseData = JSON.parse(uploadFileRes.data);
-              console.log('解析后的数据:', responseData);
-              console.log('是否包含识别结果:', !!responseData.data?.recognition_results);
-              
-              // 保存识别结果
-              if (responseData.code === 200 && responseData.data.recognition_results) {
-                // 添加到所有历史识别结果中
-                this.recognitionResults.push({
-                  imageUrl: filePath,
-                  results: responseData.data.recognition_results,
-                  filename: responseData.data.filename,
-                  // 添加时间戳，用于与历史记录关联
-                  timestamp: Date.now()
-                });
-                
-                // 添加到当前上传的识别结果中
-                this.currentRecognitionResults.push({
-                  imageUrl: filePath,
-                  results: responseData.data.recognition_results,
-                  filename: responseData.data.filename,
-                  timestamp: Date.now()
-                });
-              }
-              
-              uploadedCount++;
-              
-              // 更新进度
-              this.uploadProgress = Math.floor((uploadedCount / this.imageList.length) * 100);
-              
-              // 如果所有图片上传完成
-              if (uploadedCount === this.imageList.length) {
-                this.handleUploadComplete();
-              }
-            },
-            fail: (err) => {
-              console.error('上传失败:', err);
-              this.uploading = false;
-              this.uploadProgress = 0;
-              uni.hideLoading();
-              
-              uni.showToast({
-                title: '上传失败，请重试',
-                icon: 'none'
-              });
-            }
-          });
-        });
-      },
-      
-      // 处理上传完成
-      handleUploadComplete() {  
-        this.uploading = false;
-        uni.hideLoading();
-        
-        // 保存上传历史（传入当前识别结果）
-        this.saveHistory(this.currentRecognitionResults);
-        
-        // 如果有识别结果，显示识别结果弹窗
-        if (this.currentRecognitionResults.length > 0) {
-          this.showRecognitionResults();
-          // 设置选中的结果为最新上传的第一个结果
-          this.selectedResult = this.currentRecognitionResults[0];
-        }
-        
-        uni.showToast({
-          title: '上传成功',
-          icon: 'success'
-        });
-        
-        // 清空已选择的图片
-        this.imageList = [];
-      },
-      
-      // 保存上传历史（修改版本：接收识别结果作为参数）
-      saveHistory(recognitionResults) {
-        // 获取当前时间
-        const now = new Date();
-        const timeStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        
-        // 为每张图片创建历史记录，并关联识别结果
-        const newHistory = this.imageList.map((url, index) => {
-          // 获取该图片对应的识别结果
-          const result = recognitionResults[index] || {};
-          
-          return {
-            url: url,
-            time: timeStr,
-            timestamp: Date.now(),
-            // 添加唯一ID用于关联
-            id: `history_${Date.now()}_${index}`,
-            // 直接存储识别结果，避免后续查找
-            recognitionData: result.results || []
-          };
-        });
-        
-        // 合并到历史记录中，并限制最多显示10条
-        this.uploadHistory = [...newHistory, ...this.uploadHistory].slice(0, 10);
-        
-        // 保存到本地存储
-        uni.setStorageSync('uploadHistory', this.uploadHistory);
-      },
-      
-      // 从本地存储加载历史记录
-      loadHistory() {
-        const history = uni.getStorageSync('uploadHistory');
-        if (history) {
-          this.uploadHistory = history;
-        }
-      },
-      
-      // 显示历史记录的识别结果（修改版本）
-      showHistoryResult(index) {
-        // 获取点击的历史图片项
-        const historyItem = this.uploadHistory[index];
-        
-        if (historyItem && historyItem.recognitionData && historyItem.recognitionData.length > 0) {
-          // 直接从historyItem中获取识别结果
-          this.selectedResult = {
-            imageUrl: historyItem.url,
-            results: historyItem.recognitionData,
-            filename: '历史图片'
-          };
-        } else {
-          // 如果没有直接存储的识别结果，尝试通过其他方式查找
-          const result = this.recognitionResults.find(r => 
-            r.imageUrl === historyItem.url || 
-            (r.timestamp && historyItem.timestamp && Math.abs(r.timestamp - historyItem.timestamp) < 1000)
-          );
-          
-          if (result) {
-            this.selectedResult = result;
-          } else {
-            uni.showToast({
-              title: '未找到对应识别结果',
-              icon: 'none'
-            });
-          }
-        }
-      },
-      
-      // 添加缺失的showRecognitionResults方法
-      showRecognitionResults() {
-        // 这个方法在handleUploadComplete中被调用，但功能已经通过设置selectedResult实现
-        // 可以在这里添加任何额外的显示逻辑
-        console.log('显示识别结果');
-      },
-      
-      // 添加缺失的getConfidenceColor方法
-      getConfidenceColor(confidence) {
-        // 根据置信度返回不同的颜色
-        if (confidence >= 0.9) {
-          return '#07c160'; // 绿色 - 高置信度
-        } else if (confidence >= 0.7) {
-          return '#52c41a'; // 深绿色 - 中高置信度
-        } else if (confidence >= 0.5) {
-          return '#faad14'; // 橙色 - 中等置信度
-        } else {
-          return '#ff7a45'; // 橙色 - 低置信度
+export default {
+  data() {
+    return {
+      images: [],
+      results: [],
+      uploading: false,
+      currentIndex: 0,
+      fileProgress: 0
+    }
+  },
+  computed: {
+    overallProgress() {
+      if (!this.images.length) return 0
+      const per = 100 / this.images.length
+      // 上传占每张的 70%，推理占 30%
+      const done = this.currentIndex * per
+      const cur = Math.min(this.fileProgress, 100) * 0.7 * (per / 100)
+      return Math.min(99, Math.round(done + cur))
+    },
+    successCount() {
+      return this.results.filter((r) => !r.error).length
+    }
+  },
+  onLoad() {
+    this.consumePending()
+  },
+  onShow() {
+    // 页面实例被复用（如 H5 路由回退）时也能接收首页带入的图片
+    this.consumePending()
+  },
+  methods: {
+    percent,
+    level: confidenceLevel,
+    /** 读取首页快捷入口带入的图片并自动开始识别 */
+    consumePending() {
+      const app = getApp()
+      const pending = app && app.globalData ? app.globalData.pendingImages : []
+      if (!Array.isArray(pending) || !pending.length || this.uploading) return
+      app.globalData.pendingImages = []
+      this.results = []
+      this.images = pending.slice(0, 9)
+      this.$nextTick(() => this.start())
+    },
+    hintFor(c) {
+      if (c >= 0.8) return '结果可信度较高'
+      if (c >= 0.5) return '建议参考其他候选'
+      return '可尝试换角度重拍'
+    },
+    ringStyle(c) {
+      const p = percent(c)
+      const color = confidenceLevel(c).color
+      return { background: `conic-gradient(${color} ${p}%, #EAF0EC 0)` }
+    },
+    choose(source) {
+      const remain = 9 - this.images.length
+      if (remain <= 0) {
+        uni.showToast({ title: '最多选择 9 张图片', icon: 'none' })
+        return
+      }
+      uni.chooseImage({
+        count: source === 'camera' ? 1 : remain,
+        sizeType: ['compressed'],
+        sourceType: [source],
+        success: (res) => {
+          this.images = this.images.concat(res.tempFilePaths || []).slice(0, 9)
+        },
+        fail: () => {}
+      })
+    },
+    removeImage(i) {
+      if (this.uploading) return
+      this.images.splice(i, 1)
+    },
+    preview(url) {
+      if (!url) return
+      uni.previewImage({ urls: [url] })
+    },
+    normalize(list) {
+      const arr = Array.isArray(list) ? list.slice() : []
+      arr.sort((a, b) => (Number(b.confidence) || 0) - (Number(a.confidence) || 0))
+      return arr.map((it) => ({ class: String(it.class || '未知'), confidence: Number(it.confidence) || 0 }))
+    },
+    async recognizeOne(path) {
+      this.fileProgress = 0
+      const res = await uploadImage(path, (p) => {
+        this.fileProgress = p
+      })
+      this.fileProgress = 100
+      if (res && res.code === 200 && res.data) {
+        const results = this.normalize(res.data.recognition_results)
+        if (!results.length) throw new Error('未检测到植物，请换一张更清晰的照片')
+        return { results, filename: res.data.filename || '' }
+      }
+      throw new Error((res && res.message) || '识别失败，请重试')
+    },
+    async start() {
+      if (this.uploading || !this.images.length) return
+      this.uploading = true
+      this.currentIndex = 0
+      const output = []
+
+      for (let i = 0; i < this.images.length; i++) {
+        this.currentIndex = i
+        const path = this.images[i]
+        try {
+          const { results, filename } = await this.recognizeOne(path)
+          const saved = await persistImage(path)
+          addRecord({ image: saved, results, filename })
+          output.push({ image: saved, results, best: results[0], error: '' })
+        } catch (e) {
+          output.push({ image: path, results: [], best: null, error: (e && e.message) || '识别失败' })
         }
       }
+
+      this.uploading = false
+      this.results = output
+      this.images = []
+      uni.pageScrollTo({ scrollTop: 0, duration: 200 })
+
+      const ok = output.filter((r) => !r.error).length
+      uni.showToast({
+        title: ok === output.length ? '识别完成' : `完成，${output.length - ok} 张失败`,
+        icon: ok === output.length ? 'success' : 'none'
+      })
+    },
+    async retry(i) {
+      const item = this.results[i]
+      if (!item || this.uploading) return
+      uni.showLoading({ title: '重新识别…', mask: true })
+      try {
+        const { results, filename } = await this.recognizeOne(item.image)
+        const saved = await persistImage(item.image)
+        addRecord({ image: saved, results, filename })
+        this.results.splice(i, 1, { image: saved, results, best: results[0], error: '' })
+        uni.showToast({ title: '识别成功', icon: 'success' })
+      } catch (e) {
+        uni.showToast({ title: (e && e.message) || '识别失败', icon: 'none' })
+      } finally {
+        uni.hideLoading()
+      }
+    },
+    reset() {
+      this.results = []
+      this.images = []
+      this.fileProgress = 0
+      this.currentIndex = 0
+    },
+    goHistory() {
+      uni.reLaunch({ url: '/pages/main/main?tab=2' })
     }
-  };
+  }
+}
 </script>
 
-<style scoped>
-  .content {
-    padding: 30rpx;
-    background-color: #f5f5f5;
-    min-height: 100vh;
-    background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+<style lang="scss" scoped>
+.identify {
+  &__body {
+    padding-top: 16rpx;
+    padding-bottom: 40rpx;
   }
-  
-  .title {
-    font-size: 56rpx;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 60rpx;
-    color: #333;
-    text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.1);
-  }
-  
-  .upload-container {
-    background-color: #fff;
-    border-radius: 30rpx;
-    padding: 40rpx;
-    margin-bottom: 40rpx;
-    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-  }
-  
-  .upload-container:active {
-    box-shadow: 0 5rpx 15rpx rgba(0, 0, 0, 0.05);
-    transform: translateY(2rpx);
-  }
-  
-  .upload-btn-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30rpx;
-  }
-  
-  .upload-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 450rpx;
-    height: 300rpx;
-    border: 4rpx dashed #ddd;
-    border-radius: 20rpx;
-    background-color: #f9f9f9;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .upload-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(7, 193, 96, 0.1), transparent);
-    transition: all 0.5s ease;
-  }
-  
-  .upload-btn:active {
-    border-color: #07c160;
-    background-color: rgba(7, 193, 96, 0.05);
-    transform: scale(0.98);
-  }
-  
-  .upload-btn:active::before {
-    left: 100%;
-  }
-  
-  .upload-icon-wrapper {
-    width: 120rpx;
-    height: 120rpx;
+
+  &__nav-btn {
+    width: 72rpx;
+    height: 72rpx;
     border-radius: 50%;
-    background-color: #07c160;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20rpx;
-    box-shadow: 0 5rpx 15rpx rgba(7, 193, 96, 0.3);
   }
-  
-  .upload-icon {
-    width: 60rpx;
-    height: 60rpx;
-    filter: brightness(0) invert(1);
+
+  &__submit {
+    margin-top: 32rpx;
   }
-  
-  .upload-text {
-    font-size: 32rpx;
-    color: #333;
-    font-weight: 500;
-    margin-bottom: 8rpx;
+
+  &__spinner {
+    border-color: rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    margin-right: 14rpx;
   }
-  
-  .upload-subtext {
-    font-size: 24rpx;
-    color: #999;
-  }
-  
-  .image-list {
-    margin-bottom: 30rpx;
-  }
-  
-  .image-list-title {
-    font-size: 28rpx;
-    color: #666;
-    margin-bottom: 20rpx;
-    display: block;
-  }
-  
-  .images-wrapper {
-    display: flex;
-    gap: 20rpx;
-    overflow-x: auto;
-    padding-right: 20rpx;
-    
-  }
-  
-  .image-item {
-    position: relative;
-    width: 200rpx;
-    height: 200rpx;
-    border-radius: 15rpx;
-    overflow: hidden;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-  }
-  
-  .image-item:active {
-    transform: scale(0.95);
-  }
-  
-  .preview-image {
-    width: 100%;
-    height: 100%;
-  }
-  /* 添加滑动提示文字样式 */
-.swipe-hint {
-  font-size: 24rpx;
-  color: #999;
-  display: block;
-  margin-bottom: 15rpx;
-  text-align: center;
-  /* 添加轻微的动画效果吸引用户注意 */
-  animation: fadeInOut 2s ease-in-out infinite;
 }
 
-/* 淡入淡出动画 */
-@keyframes fadeInOut {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-  .delete-btn {
-    position: absolute;
-    top: 10rpx;
-    right: 10rpx;
-    width: 60rpx;
-    height: 60rpx;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-  }
-  
-  .delete-btn:active {
-    background-color: #ee0a24;
-    transform: scale(1.1);
-  }
-  
-  .delete-icon {
-    color: #fff;
-    font-size: 40rpx;
-    font-weight: bold;
-  }
-  
-  .progress-container {
-    margin: 30rpx 0;
-  }
-  
-  .progress-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15rpx;
-  }
-  
-  .progress-text {
-    font-size: 28rpx;
-    color: #666;
-  }
-  
-  .progress-percentage {
-    font-size: 28rpx;
-    font-weight: bold;
-    color: #07c160;
-  }
-  
-  .progress-bar {
-    width: 100%;
-    height: 20rpx;
-    background-color: #f0f0f0;
-    border-radius: 10rpx;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .progress-track {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, #e6f7ff, #f6ffed);
-  }
-  
-  .progress-fill {
-    position: absolute;
-    height: 100%;
-    background: linear-gradient(90deg, #07c160, #52c41a);
-    transition: width 0.3s ease;
-  }
-  
-  .progress-ball {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 30rpx;
-    height: 30rpx;
-    background-color: #fff;
-    border: 6rpx solid #07c160;
-    border-radius: 50%;
-    box-shadow: 0 2rpx 8rpx rgba(7, 193, 96, 0.3);
-    transition: left 0.3s ease;
-  }
-  
-  .submit-btn {
-    width: 100%;
-    height: 100rpx;
-    line-height: 100rpx;
-    background-color: #07c160;
-    color: #fff;
-    border-radius: 50rpx;
-    margin-top: 20rpx;
-    font-size: 32rpx;
-    font-weight: 500;
-    box-shadow: 0 6rpx 20rpx rgba(7, 193, 96, 0.3);
-    transition: all 0.3s ease;
-  }
-  
-  .submit-btn:active {
-    background-color: #06ad56;
-    box-shadow: 0 3rpx 10rpx rgba(7, 193, 96, 0.2);
-    transform: scale(0.98);
-  }
-  
-  .submit-btn:disabled {
-    background-color: #ccc;
-    box-shadow: none;
-  }
-  
-  .submit-btn-text {
-    font-size: 32rpx;
-    font-weight: 500;
-  }
-  
-  /* 历史记录样式 */
-  .history-container {
-    background-color: #fff;
-    border-radius: 30rpx;
-    padding: 40rpx;
-    margin-bottom: 40rpx;
-    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.08);
-  }
-  
-  .history-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 30rpx;
-  }
-  
-  .history-title {
-    font-size: 36rpx;
-    font-weight: bold;
-    color: #333;
-    margin-right: 10rpx;
-  }
-  
-  .history-tip {
-    font-size: 24rpx;
-    color: #999;
-    opacity: 0.8;
-  }
-  
-  .history-list {
-    display: flex;
-    gap: 20rpx;
-    overflow-x: auto;
-    padding-right: 20rpx;
-  }
-  
-  .history-item {
-    position: relative;
-    width: 180rpx;
-    height: 180rpx;
-    border-radius: 15rpx;
-    overflow: hidden;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-  }
-  
-  .history-item:active {
-    transform: scale(0.95);
-  }
-  
-  .history-image {
-    width: 100%;
-    height: 100%;
-  }
-  
-  .history-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-    padding: 15rpx;
-  }
-  
-  .history-info {
-    color: #fff;
-    font-size: 22rpx;
-    text-align: center;
-    display: block;
-  }
-  
-  /* 识别结果样式 */
-  .recognition-container {
-    background-color: #fff;
-    border-radius: 30rpx;
-    padding: 40rpx;
-    margin-top: 40rpx;
-    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.08);
-  }
-  
-  .recognition-title {
-    font-size: 36rpx;
-    font-weight: bold;
-    margin-bottom: 30rpx;
-    color: #333;
-    display: block;
-  }
-  
-  .recognition-list {
-    display: flex;
-    flex-direction: column;
-    gap: 30rpx;
-  }
-  
-  .recognition-card {
-    background-color: #f9f9f9;
-    border-radius: 20rpx;
-    padding: 30rpx;
-    transition: all 0.3s ease;
-  }
-  
-  .recognition-card:active {
-    box-shadow: 0 5rpx 15rpx rgba(0, 0, 0, 0.05);
-    transform: translateY(2rpx);
-  }
-  
-  .card-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 25rpx;
-  }
-  
-  .card-image {
-    width: 160rpx;
-    height: 140rpx;
-    border-radius: 15rpx;
-    margin-right: 25rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  }
-  
-  .card-info {
-    flex: 1;
-  }
-  
-  .card-filename {
-    font-size: 30rpx;
-    font-weight: bold;
-    color: #333;
-    display: block;
-    margin-bottom: 10rpx;
-  }
-  
-  .card-stats {
-    font-size: 26rpx;
-    color: #666;
-  }
-  
-  .card-results {
-    display: flex;
-    flex-direction: column;
-    gap: 20rpx;
-  }
-  
-  .result-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .result-class {
-    font-size: 28rpx;
-    font-weight: 500;
-    color: #333;
-    flex: 0 0 180rpx;
-  }
-  
-  .confidence-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 15rpx;
-  }
-  
-  .confidence-text {
-    font-size: 26rpx;
-    font-weight: bold;
-    color: #07c160;
-    width: 60rpx;
-    text-align: right;
-  }
-  
-  .confidence-bar {
-    flex: 1;
-    height: 15rpx;
-    background-color: #f0f0f0;
-    border-radius: 8rpx;
-    overflow: hidden;
-  }
-  
-  .confidence-fill {
-    height: 100%;
-    transition: width 0.5s ease;
-  }
-  
-.header-container {
+/* 引导卡片 */
+.intro {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 40rpx;
-  height: 80rpx;
+  padding: 40rpx 32rpx;
+  border-radius: $yl-radius-xl;
+  background: $yl-gradient-hero;
+  overflow: hidden;
+  box-shadow: $yl-shadow-primary;
+
+  &__orb {
+    position: absolute;
+    border-radius: 50%;
+
+    &--1 {
+      width: 300rpx;
+      height: 300rpx;
+      right: -80rpx;
+      top: -120rpx;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 70%);
+    }
+
+    &--2 {
+      width: 200rpx;
+      height: 200rpx;
+      left: -60rpx;
+      bottom: -80rpx;
+      background: radial-gradient(circle at 50% 50%, rgba(111, 211, 154, 0.4), rgba(111, 211, 154, 0) 70%);
+    }
+  }
+
+  &__text {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    font-size: 38rpx;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  &__desc {
+    margin-top: 10rpx;
+    font-size: 24rpx;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.82);
+    padding-right: 12rpx;
+  }
+
+  &__icon {
+    position: relative;
+    width: 128rpx;
+    height: 128rpx;
+    border-radius: 40rpx;
+    background: rgba(255, 255, 255, 0.18);
+    border: 2rpx solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 }
 
-.back-button {
-  width: 80rpx;
-  height: 80rpx;
+/* 入口 */
+.pick {
+  display: flex;
+  margin-top: 24rpx;
+
+  &__btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36rpx 20rpx 30rpx;
+    border-radius: $yl-radius-lg;
+    background: #fff;
+    box-shadow: $yl-shadow;
+
+    &:first-child {
+      margin-right: 20rpx;
+    }
+  }
+
+  &__icon {
+    width: 104rpx;
+    height: 104rpx;
+    border-radius: 32rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--green {
+      background: $yl-primary-soft;
+    }
+
+    &--blue {
+      background: $yl-info-soft;
+    }
+  }
+
+  &__title {
+    margin-top: 18rpx;
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $yl-text-1;
+  }
+
+  &__desc {
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
+}
+
+/* 已选图片 */
+.sel {
+  margin-top: 24rpx;
+  padding: 28rpx 24rpx 12rpx;
+  border-radius: $yl-radius-lg;
+  background: #fff;
+  box-shadow: $yl-shadow;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20rpx;
+  }
+
+  &__title {
+    font-size: 28rpx;
+    font-weight: 700;
+    color: $yl-text-1;
+  }
+
+  &__clear {
+    display: flex;
+    align-items: center;
+    font-size: 22rpx;
+    color: $yl-text-3;
+
+    text {
+      margin-left: 4rpx;
+    }
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  &__item {
+    position: relative;
+    width: calc((100% - 32rpx) / 3);
+    height: 200rpx;
+    margin-right: 16rpx;
+    margin-bottom: 16rpx;
+    border-radius: $yl-radius-sm;
+    overflow: hidden;
+    background: $yl-bg-input;
+
+    &:nth-child(3n) {
+      margin-right: 0;
+    }
+  }
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &__remove {
+    position: absolute;
+    right: 8rpx;
+    top: 8rpx;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__mask {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(14, 59, 46, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__spinner {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+  }
+
+  &__done {
+    position: absolute;
+    left: 8rpx;
+    bottom: 8rpx;
+    width: 36rpx;
+    height: 36rpx;
+    border-radius: 50%;
+    background: $yl-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2rpx dashed $yl-text-4;
+    background: transparent;
+    font-size: 22rpx;
+    color: $yl-text-3;
+
+    text {
+      margin-top: 6rpx;
+    }
+  }
+}
+
+/* 进度 */
+.progress {
+  margin-top: 24rpx;
+  padding: 24rpx 28rpx;
+  border-radius: $yl-radius-lg;
+  background: #fff;
+  box-shadow: $yl-shadow;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__text {
+    font-size: 26rpx;
+    color: $yl-text-1;
+    font-weight: 600;
+  }
+
+  &__pct {
+    font-size: 28rpx;
+    font-weight: 800;
+    color: $yl-primary;
+  }
+
+  &__bar {
+    height: 16rpx;
+    border-radius: 8rpx;
+    background: $yl-bg-input;
+    overflow: hidden;
+    margin-top: 16rpx;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: 8rpx;
+    background: $yl-gradient;
+    transition: width 0.3s ease;
+  }
+
+  &__hint {
+    display: block;
+    margin-top: 12rpx;
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
+}
+
+/* 小贴士 */
+.tips {
+  margin-top: 28rpx;
+  padding: 24rpx 28rpx;
+  border-radius: $yl-radius-lg;
+  background: $yl-primary-soft;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    padding: 8rpx 0;
+    font-size: 24rpx;
+    color: $yl-primary-dark;
+
+    text {
+      margin-left: 10rpx;
+    }
+  }
+}
+
+/* 结果 */
+.results {
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20rpx;
+  }
+
+  &__title {
+    display: block;
+    font-size: 40rpx;
+    font-weight: 800;
+    color: $yl-text-1;
+  }
+
+  &__sub {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 24rpx;
+    color: $yl-text-3;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    height: 48rpx;
+    padding: 0 18rpx;
+    border-radius: $yl-radius-pill;
+    background: $yl-primary-soft;
+    color: $yl-primary-dark;
+    font-size: 22rpx;
+    font-weight: 600;
+
+    text {
+      margin-left: 6rpx;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    margin-top: 12rpx;
+  }
+
+  &__btn {
+    flex: 1;
+
+    &:first-child {
+      margin-right: 20rpx;
+    }
+  }
+
+  &__btn-text {
+    margin-left: 10rpx;
+  }
+}
+
+.result {
+  margin-bottom: 24rpx;
+  border-radius: $yl-radius-lg;
+  background: #fff;
+  box-shadow: $yl-shadow;
+  overflow: hidden;
+
+  &__top {
+    display: flex;
+    padding: 24rpx;
+  }
+
+  &__img {
+    width: 200rpx;
+    height: 200rpx;
+    border-radius: $yl-radius;
+    flex-shrink: 0;
+    background: $yl-bg-input;
+  }
+
+  &__best {
+    flex: 1;
+    min-width: 0;
+    padding-left: 24rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  &__label {
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
+
+  &__name {
+    margin-top: 4rpx;
+    font-size: 40rpx;
+    font-weight: 800;
+    color: $yl-text-1;
+    line-height: 1.2;
+  }
+
+  &__conf {
+    display: flex;
+    align-items: center;
+    margin-top: 16rpx;
+  }
+
+  &__conf-text {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16rpx;
+    min-width: 0;
+  }
+
+  &__level {
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  &__hint {
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
+
+  &__err {
+    margin-top: 6rpx;
+    font-size: 26rpx;
+    color: $yl-danger;
+    line-height: 1.5;
+  }
+
+  &__retry {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    height: 56rpx;
+    padding: 0 22rpx;
+    margin-top: 16rpx;
+    border-radius: $yl-radius-pill;
+    background: $yl-primary-soft;
+    color: $yl-primary-dark;
+    font-size: 24rpx;
+    font-weight: 600;
+
+    text {
+      margin-left: 6rpx;
+    }
+  }
+
+  &__list {
+    padding: 8rpx 24rpx 20rpx;
+    border-top: 1rpx solid $yl-border;
+  }
+
+  &__list-title {
+    display: block;
+    padding: 16rpx 0 6rpx;
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    padding: 12rpx 0;
+  }
+
+  &__rank {
+    width: 36rpx;
+    height: 36rpx;
+    border-radius: 10rpx;
+    background: $yl-bg-input;
+    color: $yl-text-3;
+    font-size: 20rpx;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &.is-top {
+      background: $yl-primary;
+      color: #fff;
+    }
+  }
+
+  &__class {
+    width: 190rpx;
+    margin-left: 14rpx;
+    font-size: 26rpx;
+    color: $yl-text-1;
+    flex-shrink: 0;
+  }
+
+  &__bar {
+    flex: 1;
+    height: 14rpx;
+    border-radius: 7rpx;
+    background: $yl-bg-input;
+    overflow: hidden;
+    margin: 0 16rpx;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: 7rpx;
+    transition: width 0.6s ease;
+  }
+
+  &__pct {
+    width: 76rpx;
+    text-align: right;
+    font-size: 24rpx;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+}
+
+/* 置信度环 */
+.ring {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
+  flex-shrink: 0;
 
-.back-button:active {
-  background-color: #f5f5f5;
-  transform: scale(0.95);
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
-}
+  &__inner {
+    width: 84rpx;
+    height: 84rpx;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-.back-icon {
-  width: 40rpx;
-  height: 40rpx;
-}
-
-.header-placeholder {
-  width: 80rpx;
-}  
-
-.title {
-  font-size: 56rpx;
-  font-weight: bold;
-  text-align: center;
-  color: #333;
-  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.1);
-  flex: 1;
-  margin-bottom: 0;
+  &__pct {
+    font-size: 22rpx;
+    font-weight: 800;
+  }
 }
 </style>

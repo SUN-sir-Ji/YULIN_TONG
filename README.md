@@ -44,21 +44,34 @@ YULIN_TONG~/
 │   ├── tables.sql          # 数据库建表 + 初始化数据（≈ 50 MB）
 │   └── query               # 占位文件（空）
 │
-└── new example - 副本/     # uni-app 前端
-    ├── pages/              # 页面
-    │   ├── index/          # 启动页
-    │   ├── login/          # 登录 / 注册 / 找回密码
-    │   ├── Home/           # 主菜单
-    │   ├── identify/       # 图片识别
-    │   ├── plant/          # 植物图鉴
-    │   └── about/          # 关于
-    ├── components/         # 公共组件
-    ├── static/             # 图片 / 图标
-    ├── utils/              # API 工具
-    ├── App.vue             # 单页应用入口
+└── new example - 副本/     # uni-app 前端（v2.0 重构）
+    ├── pages/
+    │   ├── index/index.vue           # 启动页（品牌 + 登录/注册入口，已登录自动进入）
+    │   ├── login/                    # login / register / findpassword（共用 auth.scss）
+    │   ├── main/main.vue             # 主容器：自定义底部 Tab（首页 / 图鉴 / 识别 / 记录 / 我的）
+    │   │   └── components/           # home-tab / atlas-tab / history-tab / mine-tab
+    │   ├── identify/identify.vue     # 拍照 / 相册 → 上传识别 → 结果卡片（Top 5 + 置信度环）
+    │   ├── plant/plantdetail.vue     # 植物详情（分类阶元 + 形态 / 环境 / 分布 / 习性 / 用途）
+    │   └── about/about.vue           # 关于
+    ├── components/                   # easycom 自动注册，无需 import
+    │   ├── yl-navbar/                # 自定义导航栏（状态栏 / 胶囊避让、沉浸式）
+    │   ├── yl-tabbar/                # 底部导航（中间凸起识别按钮）
+    │   ├── yl-category-picker/       # 门→纲→目→科→属 逐级分类弹层
+    │   ├── yl-plant-card/            # 植物卡片（无图时生成渐变封面）
+    │   └── yl-empty/                 # 空状态
+    ├── utils/
+    │   ├── apiConfig.js              # 后端地址（可在「我的 → 服务器地址」中动态修改）
+    │   ├── request.js                # uni.request / uploadFile 封装，统一解析 FastAPI 错误
+    │   ├── api.js                    # 全部后端接口
+    │   ├── auth.js                   # 登录态（token / userInfo）
+    │   └── history.js                # 识别记录（本地存储）
+    ├── static/                       # logo
+    ├── uni_modules/uni-icons/        # 图标字体
+    ├── App.vue                       # 全局样式 + globalData（不再承担页面切换）
+    ├── uni.scss                      # 设计变量（$yl-* 品牌色 / 圆角 / 阴影）
     ├── main.js
-    ├── pages.json
-    └── manifest.json       # App 配置（含 Android 权限）
+    ├── pages.json                    # 标准路由 + easycom 规则
+    └── manifest.json                 # App 配置（含 Android 权限）
 ```
 
 ---
@@ -136,36 +149,46 @@ results = model.predict(source=file_path, save=False, conf=0)
 
 ---
 
-## 四、前端页面（uni-app）
+## 四、前端页面（uni-app · v2.0 重构）
 
-启动方式：用 HBuilderX 打开 `new example - 副本/` 文件夹即可。
+启动方式：用 HBuilderX 打开 `new example - 副本/` 文件夹即可（首次运行会提示安装 sass 编译插件，确认安装）。
+
+> v2.0 前端完全重写：改为 uni-app 标准路由（`pages.json` + `uni.navigateTo` / `uni.reLaunch`），
+> 组件通过 easycom 自动注册，UI 采用「雨林绿」设计体系（`uni.scss` 中的 `$yl-*` 变量）。
+> **后端接口与数据结构未做任何修改。**
 
 ### 页面流程图
 
 ```
-[index 启动页]
-   ├── 登录 ──→ [login] ──→ [homepage 主菜单]
-   │              ├── 忘记密码 ──→ [findPassword]
-   │              └── 注册 ──→ [register] ──→ [registersuccess] ──→ [login]
-   │                                  ↑ 需邮箱验证码
-   └── 注册 ──→ [register] ─→ ...（同上）
-                    ↓ 登录成功后
-              [homepage 主菜单]
-                 ├── 植物图鉴 ──→ [planthome 树形选择] ──→ [plantimage 详情]
-                 ├── 植物识别 ──→ [identify 图片上传/拍照]
-                 └── 关于 ──→ [about]
+[index 启动页]  ── 已登录自动进入 ──→ [main 主容器]
+   ├── 登录 ──→ [login] ──→ [main]
+   │              ├── 忘记密码 ──→ [findpassword]（验证码 → 弹窗显示密码，可复制）
+   │              └── 注册 ──→ [register]（邮箱验证码 + 密码强度）──→ [login]
+   └── 先随便逛逛 ──→ [main]（游客模式，识别 / 图鉴均可用）
+
+[main 主容器]（自定义底部 Tab）
+   ├── 首页   ：问候 + 搜索 + 识别主卡片 + 快捷入口 + 分类速览（门）+ 最近识别 + 小知识
+   ├── 图鉴   ：全部植物网格 / 分类弹层（门→纲→目→科→属）/ 结果内搜索 / 下拉刷新 / 无限滚动
+   │             └──→ [plantdetail 植物详情]
+   ├── 识别(中间凸起按钮) ──→ [identify]：拍照 / 相册（≤ 9 张）→ 逐张上传 → Top 5 结果 + 置信度环
+   ├── 记录   ：本机识别记录（按日期分组、展开候选、删除 / 清空）
+   └── 我的   ：用户信息 + 统计 / 服务器地址 / 清除缓存 / 关于 / 退出登录
 ```
 
 ### 关键文件
 
 | 文件 | 作用 |
 |---|---|
-| [App.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/App.vue) | 单页应用壳，通过 `currentPage` 状态切换页面（无路由） |
-| [utils/apiConfig.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/apiConfig.js) | API 基础地址配置（默认 `http://localhost:8000`） |
-| [utils/api.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/api.js) | API 调用封装（目前只封装了分类） |
-| [pages/login/login.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages/login/login.vue) | 登录页（直接 fetch `/api/auth/login`） |
-| [pages/identify/identify.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages/identify/identify.vue) | 图片选择 + 上传 + 识别 |
-| [pages/plant/planthome.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages/plant/planthome.vue) | 树形分类检索（自研 `peng-tree` 组件） |
+| [pages.json](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages.json) | 标准路由表 + easycom 规则（`yl-*` → `components/yl-*/yl-*.vue`） |
+| [uni.scss](new%20example%20-%20%E5%89%AF%E6%9C%AC/uni.scss) | 设计变量：品牌色、文字色、圆角、阴影、渐变（自动注入所有 scss 样式块） |
+| [App.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/App.vue) | 全局样式（按钮 / 卡片 / 标签 / 动画 / 骨架屏）与 `globalData` |
+| [utils/apiConfig.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/apiConfig.js) | API 基础地址（默认 `http://localhost:8000`，支持本地覆盖） |
+| [utils/request.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/request.js) | 请求封装：自动拼接 baseUrl、携带 token、解析 FastAPI `detail` 错误 |
+| [utils/api.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/api.js) | 登录 / 注册 / 验证码 / 找回密码 / 分类 / 植物列表 / 上传识别 |
+| [pages/main/main.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages/main/main.vue) | Tab 容器，四个 Tab 以组件常驻，切换无闪烁 |
+| [components/yl-category-picker](new%20example%20-%20%E5%89%AF%E6%9C%AC/components/yl-category-picker/yl-category-picker.vue) | 分类弹层：按树深度（0-4）映射到 `phylum/class/order/family/genus_latin_name` |
+| [pages/identify/identify.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages/identify/identify.vue) | 识别流程；结果自动写入本地记录（`utils/history.js`） |
+| [pages/plant/plantdetail.vue](new%20example%20-%20%E5%89%AF%E6%9C%AC/pages/plant/plantdetail.vue) | 详情页，数据通过 `getApp().globalData.currentPlant` 传递（后端无按 id 查询接口） |
 
 ### 已声明的 Android 权限
 
@@ -196,10 +219,14 @@ python main.py
 
 ### 前端
 
-1. 安装 HBuilderX（uni-app 官方 IDE）
+1. 安装 HBuilderX（uni-app 官方 IDE，需 Vue3 / Vite 版本）
 2. 打开 `new example - 副本/` 目录
-3. 运行 → 运行到手机或模拟器（Android/iOS/微信小程序均可）
-4. 真机调试时修改 [apiConfig.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/apiConfig.js) 的 `baseUrl` 为电脑局域网 IP
+3. 运行 → 运行到浏览器 / 手机或模拟器（H5、Android、iOS、微信小程序均可）
+4. 真机调试时修改 [apiConfig.js](new%20example%20-%20%E5%89%AF%E6%9C%AC/utils/apiConfig.js) 的 `baseUrl` 为电脑局域网 IP，
+   或直接在 App 内「我的 → 服务器地址」中填写（保存在本地，优先级高于代码默认值）
+
+> 也可以用 uni-app 的 Vite CLI 运行：把 `new example - 副本/` 的内容放入
+> `uni-preset-vue#vite` 模板的 `src/` 目录，`npm install && npm run dev:h5`。
 
 ---
 
@@ -224,7 +251,9 @@ python main.py
 
 - 加一个「邮箱登录」接口
 - 识别结果落库到 `recognition_log`（当前接口没写）
-- 前端把 5+ 个独立页面改成 `uni-app` 标准路由（现在用 `currentPage` 字符串判断，文件多了难维护）
+- ~~前端把 5+ 个独立页面改成 `uni-app` 标准路由~~（v2.0 已完成）
+- 后端增加「按中文名 / 拉丁名搜索」与「按 id 查询植物详情」接口（前端目前在已加载结果内做本地搜索）
+- 后端提供静态图片访问（`image_path` 目前多为空，前端会自动生成渐变封面兜底）
 - 把 `tables.sql` 拆成 `schema.sql` + `data.sql`，方便重建
 - 给 `best.pt` 加 Git LFS 或说明下载方式
 

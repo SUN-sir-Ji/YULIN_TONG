@@ -1,299 +1,375 @@
 <template>
-  <view class="container">
-    <!-- 顶部导航栏 -->
-    <view class="navbar">
-      <view class="back-btn" @click="$emit('goToHomepage1')">
-        <uni-icons type="left" size="48rpx" color="#333"></uni-icons>
-      </view>
-      <view class="title">关于我们</view>
-      <view class="empty-space"></view>
-    </view>
+  <view class="about yl-page">
+    <yl-navbar title="关于雨林通" border></yl-navbar>
 
-    <!-- 主体内容 -->
-    <view class="content">
-      <!-- App Logo和名称 -->
-      <view class="app-info">
-        <image 
-          class="app-logo" 
-          src="/static/logo.png" 
-          mode="widthFix"
-          alt="应用程序logo"
-        ></image>
-        <view class="app-name">我的应用</view>
-        <view class="app-version">版本 v1.0.0</view>
+    <view class="yl-container about__body">
+      <!-- 品牌卡片 -->
+      <view class="brand yl-anim-up">
+        <view class="brand__orb brand__orb--1"></view>
+        <view class="brand__orb brand__orb--2"></view>
+        <view class="brand__logo">
+          <image class="brand__logo-img" src="/static/logo.png" mode="aspectFit"></image>
+        </view>
+        <text class="brand__name">雨林通</text>
+        <text class="brand__en">RAINFOREST LINK</text>
+        <view class="brand__version">
+          <text>Version {{ version }}</text>
+        </view>
+        <text class="brand__slogan">拍一拍，认识身边的每一株植物</text>
       </view>
 
-      <!-- 应用简介 -->
-      <view class="app-intro">
-        <view class="section-title">应用简介</view>
-        <view class="intro-content">
-          这是一款功能强大的移动应用，为用户提供便捷的服务和优质的体验。我们致力于不断优化产品，为用户创造更大价值。
+      <!-- 简介 -->
+      <view class="card yl-anim-up yl-delay-1">
+        <view class="card__head">
+          <text class="card__title">应用简介</text>
+        </view>
+        <text class="card__text">
+          雨林通是一款基于深度学习的植物识别应用。上传或拍摄植物照片，YOLO 模型会给出最可能的物种及置信度；同时内置按「门 → 纲 → 目 → 科 → 属」组织的植物图鉴，可逐级浏览并查看形态特征、生长环境、分布与用途等资料。
+        </text>
+      </view>
+
+      <!-- 核心功能 -->
+      <view class="card yl-anim-up yl-delay-2">
+        <view class="card__head">
+          <text class="card__title">核心功能</text>
+        </view>
+        <view v-for="f in features" :key="f.title" class="feature">
+          <view class="feature__icon" :style="{ background: f.bg }">
+            <uni-icons :type="f.icon" size="20" :color="f.color"></uni-icons>
+          </view>
+          <view class="feature__body">
+            <text class="feature__title">{{ f.title }}</text>
+            <text class="feature__desc">{{ f.desc }}</text>
+          </view>
         </view>
       </view>
 
-      <!-- 下载二维码 -->
-      <view class="qrcode-section">
-        <view class="section-title">下载二维码</view>
-        <view class="qrcode-container">
-          <image 
-            class="qrcode" 
-            src="/static/qrcode.png" 
-            mode="widthFix"
-            alt="应用下载二维码"
-          ></image>
-          <view class="qrcode-desc">扫码下载最新版本</view>
+      <!-- 技术栈 -->
+      <view class="card yl-anim-up yl-delay-3">
+        <view class="card__head">
+          <text class="card__title">技术栈</text>
+        </view>
+        <view class="stack">
+          <view v-for="s in stack" :key="s" class="stack__chip">
+            <text>{{ s }}</text>
+          </view>
         </view>
       </view>
 
-      <!-- 其他信息 -->
-      <view class="other-info">
-        <view class="contact-item">
-          <uni-icons type="phone" size="32rpx" color="#666" class="info-icon"></uni-icons>
-          <text class="info-text">客服电话：400-123-4567</text>
+      <!-- 链接 -->
+      <view class="card yl-anim-up yl-delay-4">
+        <view class="card__head">
+          <text class="card__title">项目与反馈</text>
         </view>
-        <view class="contact-item">
-          <uni-icons type="email" size="32rpx" color="#666" class="info-icon"></uni-icons>
-          <text class="info-text">邮箱：contact@example.com</text>
+        <view class="link" hover-class="yl-hover" @click="copy(repo, '仓库地址已复制')">
+          <view class="link__icon" style="background: #F1F5F3">
+            <uni-icons type="link" size="18" color="#1A1F1C"></uni-icons>
+          </view>
+          <view class="link__body">
+            <text class="link__title">GitHub 开源仓库</text>
+            <text class="link__value yl-ellipsis">{{ repo }}</text>
+          </view>
+          <uni-icons type="paperclip" size="16" color="#9AA5A0"></uni-icons>
+        </view>
+        <view class="link" hover-class="yl-hover" @click="copy(baseUrl, '服务器地址已复制')">
+          <view class="link__icon" style="background: #E8F0FE">
+            <uni-icons type="cloud-upload-filled" size="18" color="#3B82F6"></uni-icons>
+          </view>
+          <view class="link__body">
+            <text class="link__title">当前服务器</text>
+            <text class="link__value yl-ellipsis">{{ baseUrl }}</text>
+          </view>
+          <uni-icons type="paperclip" size="16" color="#9AA5A0"></uni-icons>
         </view>
       </view>
-    </view>
 
-    <!-- 页脚 -->
-    <view class="footer">
-      <text class="copyright">© 2023 我的应用 版权所有</text>
+      <view class="about__footer">
+        <text>© {{ year }} 雨林通 · RAINFOREST LINK</text>
+        <text>仅供学习与研究使用</text>
+      </view>
+      <view class="yl-safe-bottom"></view>
     </view>
   </view>
 </template>
 
 <script>
-import uniIcons from '@/uni_modules/uni-icons/components/uni-icons/uni-icons.vue';
+import { getBaseUrl } from '@/utils/apiConfig.js'
 
 export default {
-  components: {
-    uniIcons
-  },
   data() {
     return {
-      // 可以从后端接口获取的动态数据
-      appInfo: {
-        name: '我的应用',
-        version: 'v1.0.0',
-        intro: '', // 可从接口获取
-        qrcodeUrl: '' // 可从接口获取
-      }
-    };
+      version: '2.0.0',
+      year: new Date().getFullYear(),
+      repo: 'https://github.com/SUN-sir-Ji/YULIN_TONG',
+      baseUrl: '',
+      features: [
+        { title: 'AI 植物识别', desc: '基于 Ultralytics YOLO 的物种识别，返回 Top 5 候选与置信度', icon: 'scan', color: '#1DA462', bg: '#E3F6EA' },
+        { title: '植物图鉴', desc: '五级分类导航，支持在结果中按中文名 / 拉丁名 / 别名搜索', icon: 'images-filled', color: '#3B82F6', bg: '#E8F0FE' },
+        { title: '识别记录', desc: '识别结果自动保存到本机，随时回顾候选列表', icon: 'calendar-filled', color: '#F5A524', bg: '#FFF4DF' },
+        { title: '账号体系', desc: '邮箱验证码注册、用户 ID 登录与找回密码', icon: 'person-filled', color: '#8B5CF6', bg: '#F1EBFF' }
+      ],
+      stack: ['uni-app · Vue 3', 'uni-ui / uni-icons', 'FastAPI + Uvicorn', 'SQLAlchemy 2.x', 'MySQL 5.7', 'Ultralytics YOLO', 'JWT 鉴权']
+    }
   },
   onLoad() {
-    // 页面加载时获取数据
-    // 暂时注释，避免请求不存在的接口导致错误
-    // this.fetchAboutData();
+    this.baseUrl = getBaseUrl()
   },
   methods: {
-    // 返回主页
-    navigateBack() {
-      // 假设主页在pages/index/index.vue
-      uni.navigateTo({
-        url: '/pages/index/index'
-      });
-      // 如果是从主页跳转过来的，也可以使用uni.navigateBack()
-      // uni.navigateBack({ delta: 1 });
-    },
-    
-    // 从后端接口获取关于页面数据
-    fetchAboutData() {
-      // 调用后端接口获取数据
-      uni.request({
-        url: 'https://api.example.com/about', // 后端接口地址
-        method: 'GET',
-        success: (res) => {
-          if (res.statusCode === 200 && res.data.success) {
-            this.appInfo = res.data.data;
-          } else {
-            uni.showToast({
-              title: '获取数据失败',
-              icon: 'none'
-            });
-          }
-        },
-        fail: (err) => {
-          console.error('接口请求失败', err);
-          uni.showToast({
-            title: '网络错误',
-            icon: 'none'
-          });
-        }
-      });
+    copy(text, tip) {
+      uni.setClipboardData({
+        data: text,
+        success: () => uni.showToast({ title: tip || '已复制', icon: 'none' })
+      })
     }
   }
-};
+}
 </script>
 
-<style scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f5f5f5;
+<style lang="scss" scoped>
+.about {
+  &__body {
+    padding-top: 16rpx;
+    padding-bottom: 40rpx;
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 40rpx;
+    font-size: 22rpx;
+    line-height: 1.8;
+    color: $yl-text-4;
+  }
 }
 
-/* 导航栏样式 */
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 160rpx;
-  padding: 0 32rpx;
-  background-color: #fff;
-  border-bottom: 2rpx solid #eee;
-}
-
-.back-btn {
-  width: 88rpx;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.title {
-  font-size: 36rpx;
-  font-weight: 500;
-  color: #333;
-}
-
-.empty-space {
-  width: 88rpx;
-  height: 88rpx;
-}
-
-/* 主体内容样式 */
-.content {
-  flex: 1;
-  padding: 40rpx 32rpx;
-}
-
-/* 应用信息样式 */
-.app-info {
+.brand {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 60rpx;
-  padding: 40rpx 0;
-  background-color: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  padding: 56rpx 32rpx 44rpx;
+  border-radius: $yl-radius-xl;
+  background: $yl-gradient-hero;
+  overflow: hidden;
+  box-shadow: $yl-shadow-primary;
+
+  &__orb {
+    position: absolute;
+    border-radius: 50%;
+
+    &--1 {
+      width: 360rpx;
+      height: 360rpx;
+      right: -120rpx;
+      top: -140rpx;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 70%);
+    }
+
+    &--2 {
+      width: 260rpx;
+      height: 260rpx;
+      left: -100rpx;
+      bottom: -100rpx;
+      background: radial-gradient(circle at 50% 50%, rgba(111, 211, 154, 0.4), rgba(111, 211, 154, 0) 70%);
+    }
+  }
+
+  &__logo {
+    position: relative;
+    width: 168rpx;
+    height: 168rpx;
+    border-radius: 40rpx;
+    background: $yl-primary-dark;
+    box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.3), 0 0 0 6rpx rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  &__logo-img {
+    width: 168rpx;
+    height: 168rpx;
+    display: block;
+  }
+
+  &__name {
+    margin-top: 28rpx;
+    font-size: 48rpx;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 8rpx;
+    text-indent: 8rpx;
+  }
+
+  &__en {
+    margin-top: 4rpx;
+    font-size: 20rpx;
+    letter-spacing: 6rpx;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  &__version {
+    margin-top: 20rpx;
+    height: 44rpx;
+    padding: 0 20rpx;
+    border-radius: $yl-radius-pill;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1rpx solid rgba(255, 255, 255, 0.35);
+    display: flex;
+    align-items: center;
+    font-size: 22rpx;
+    color: #fff;
+  }
+
+  &__slogan {
+    margin-top: 20rpx;
+    font-size: 26rpx;
+    color: rgba(255, 255, 255, 0.85);
+  }
 }
 
-.app-logo {
-  width: 160rpx;
-  height: 160rpx;
-  margin-bottom: 30rpx;
-  border-radius: 32rpx;
+.card {
+  margin-top: 24rpx;
+  padding: 28rpx;
+  border-radius: $yl-radius-lg;
+  background: #fff;
+  box-shadow: $yl-shadow;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16rpx;
+  }
+
+  &__title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $yl-text-1;
+    position: relative;
+    padding-left: 18rpx;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 6rpx;
+      bottom: 6rpx;
+      width: 8rpx;
+      border-radius: 4rpx;
+      background: $yl-gradient;
+    }
+  }
+
+  &__text {
+    display: block;
+    font-size: 27rpx;
+    line-height: 1.85;
+    color: $yl-text-2;
+    text-align: justify;
+  }
 }
 
-.app-name {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10rpx;
-}
-
-.app-version {
-  font-size: 28rpx;
-  color: #666;
-}
-
-/* 通用区块标题样式 */
-.section-title {
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 24rpx;
-  padding-left: 8rpx;
-  border-left: 6rpx solid #007aff;
-}
-
-/* 应用简介样式 */
-.app-intro {
-  margin-bottom: 60rpx;
-  padding: 32rpx;
-  background-color: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-}
-
-.intro-content {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.6;
-  text-align: justify;
-}
-
-/* 二维码区域样式 */
-.qrcode-section {
-  margin-bottom: 60rpx;
-  padding: 32rpx;
-  background-color: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-}
-
-.qrcode-container {
+.feature {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid $yl-border;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 4rpx;
+  }
+
+  &__icon {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20rpx;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: $yl-text-1;
+  }
+
+  &__desc {
+    margin-top: 4rpx;
+    font-size: 24rpx;
+    line-height: 1.6;
+    color: $yl-text-3;
+  }
 }
 
-.qrcode {
-  width: 320rpx;
-  height: 320rpx;
-  margin-bottom: 20rpx;
-  padding: 20rpx;
-  background-color: #fff;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+
+  &__chip {
+    height: 56rpx;
+    padding: 0 22rpx;
+    margin: 0 12rpx 12rpx 0;
+    border-radius: $yl-radius-pill;
+    background: $yl-bg-input;
+    color: $yl-text-2;
+    font-size: 24rpx;
+    display: flex;
+    align-items: center;
+  }
 }
 
-.qrcode-desc {
-  font-size: 28rpx;
-  color: #666;
-}
-
-/* 其他信息样式 */
-.other-info {
-  margin-bottom: 60rpx;
-  padding: 32rpx;
-  background-color: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
-}
-
-.contact-item {
+.link {
   display: flex;
   align-items: center;
-  margin-bottom: 24rpx;
-}
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid $yl-border;
 
-.contact-item:last-child {
-  margin-bottom: 0;
-}
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 4rpx;
+  }
 
-.info-icon {
-  margin-right: 20rpx;
-}
+  &__icon {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20rpx;
+    flex-shrink: 0;
+  }
 
-.info-text {
-  font-size: 28rpx;
-  color: #666;
-}
+  &__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    margin-right: 12rpx;
+  }
 
-/* 页脚样式 */
-.footer {
-  padding: 30rpx 0;
-  text-align: center;
-}
+  &__title {
+    font-size: 27rpx;
+    font-weight: 600;
+    color: $yl-text-1;
+  }
 
-.copyright {
-  font-size: 24rpx;
-  color: #999;
+  &__value {
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
 }
 </style>

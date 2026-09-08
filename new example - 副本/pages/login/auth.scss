@@ -1,0 +1,400 @@
+/* 登录 / 注册 / 找回密码 共用样式 */
+
+.auth {
+  position: relative;
+  overflow: hidden;
+
+  &__deco {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 560rpx;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &__orb {
+    position: absolute;
+    border-radius: 50%;
+
+    &--1 {
+      width: 560rpx;
+      height: 560rpx;
+      right: -200rpx;
+      top: -260rpx;
+      background: radial-gradient(circle at 40% 40%, rgba(29, 164, 98, 0.22), rgba(29, 164, 98, 0) 70%);
+    }
+
+    &--2 {
+      width: 360rpx;
+      height: 360rpx;
+      left: -160rpx;
+      top: 120rpx;
+      background: radial-gradient(circle at 50% 50%, rgba(111, 211, 154, 0.28), rgba(111, 211, 154, 0) 70%);
+    }
+  }
+
+  &__body {
+    position: relative;
+    z-index: 1;
+    padding-top: 24rpx;
+    padding-bottom: 80rpx;
+  }
+
+  &__head {
+    margin-bottom: 40rpx;
+  }
+
+  &__badge {
+    width: 112rpx;
+    height: 112rpx;
+    border-radius: 28rpx;
+    background: #fff;
+    box-shadow: $yl-shadow;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 28rpx;
+    overflow: hidden;
+  }
+
+  &__badge-logo {
+    width: 112rpx;
+    height: 112rpx;
+    display: block;
+  }
+
+  &__title {
+    display: block;
+    font-size: 48rpx;
+    font-weight: 800;
+    color: $yl-text-1;
+    letter-spacing: 1rpx;
+  }
+
+  &__desc {
+    display: block;
+    margin-top: 12rpx;
+    font-size: 26rpx;
+    color: $yl-text-2;
+    line-height: 1.6;
+  }
+
+  &__card {
+    background: #fff;
+    border-radius: $yl-radius-xl;
+    padding: 40rpx 32rpx 36rpx;
+    box-shadow: $yl-shadow;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8rpx;
+    margin-bottom: 36rpx;
+  }
+
+  &__remember {
+    display: flex;
+    align-items: center;
+    font-size: 24rpx;
+    color: $yl-text-2;
+  }
+
+  &__check {
+    width: 34rpx;
+    height: 34rpx;
+    border-radius: 10rpx;
+    border: 2rpx solid $yl-text-4;
+    margin-right: 12rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &.is-on {
+      background: $yl-primary;
+      border-color: $yl-primary;
+    }
+  }
+
+  &__link {
+    font-size: 24rpx;
+    color: $yl-primary;
+    font-weight: 600;
+  }
+
+  &__submit {
+    margin-top: 8rpx;
+  }
+
+  &__spinner {
+    border-color: rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    margin-right: 14rpx;
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 40rpx;
+    font-size: 26rpx;
+  }
+
+  &__foot-text {
+    color: $yl-text-3;
+  }
+
+  &__foot-link {
+    margin-left: 8rpx;
+    color: $yl-primary;
+    font-weight: 700;
+  }
+
+  &__guest {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20rpx;
+    font-size: 24rpx;
+    color: $yl-text-3;
+
+    text {
+      margin-left: 6rpx;
+    }
+  }
+
+  &__hint {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 24rpx;
+    padding: 20rpx 24rpx;
+    border-radius: $yl-radius;
+    background: $yl-primary-soft;
+    font-size: 22rpx;
+    color: $yl-primary-dark;
+    line-height: 1.6;
+
+    .uni-icons {
+      margin-right: 10rpx;
+      margin-top: 2rpx;
+    }
+  }
+}
+
+/* 输入框 */
+.field {
+  display: flex;
+  align-items: center;
+  height: 100rpx;
+  padding: 0 20rpx 0 16rpx;
+  border-radius: $yl-radius;
+  background: $yl-bg-input;
+  border: 2rpx solid transparent;
+  margin-top: 20rpx;
+  transition: all 0.2s ease;
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &.is-focus {
+    background: #fff;
+    border-color: $yl-primary;
+    box-shadow: 0 0 0 6rpx rgba(29, 164, 98, 0.12);
+  }
+
+  &.is-error {
+    border-color: $yl-danger;
+    background: #fff;
+  }
+
+  &__icon {
+    width: 56rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__input {
+    flex: 1;
+    height: 100%;
+    font-size: 30rpx;
+    color: $yl-text-1;
+    min-width: 0;
+  }
+
+  &__placeholder {
+    color: $yl-text-3;
+    font-size: 28rpx;
+  }
+
+  &__clear {
+    width: 56rpx;
+    height: 56rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__error {
+    display: block;
+    margin: 10rpx 0 0 16rpx;
+    font-size: 22rpx;
+    color: $yl-danger;
+  }
+
+  &__code {
+    height: 64rpx;
+    padding: 0 22rpx;
+    border-radius: $yl-radius-pill;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24rpx;
+    font-weight: 600;
+    color: #fff;
+    background: $yl-gradient;
+    flex-shrink: 0;
+    margin-left: 12rpx;
+
+    &.is-disabled {
+      background: $yl-text-4;
+      color: #fff;
+    }
+  }
+}
+
+/* 密码强度 */
+.strength {
+  display: flex;
+  align-items: center;
+  margin: 12rpx 0 0 16rpx;
+
+  &__bars {
+    display: flex;
+    flex: 1;
+  }
+
+  &__bar {
+    flex: 1;
+    height: 8rpx;
+    border-radius: 4rpx;
+    background: $yl-border;
+    margin-right: 8rpx;
+    transition: background 0.2s ease;
+
+    &.is-weak {
+      background: $yl-danger;
+    }
+
+    &.is-mid {
+      background: $yl-accent;
+    }
+
+    &.is-strong {
+      background: $yl-primary;
+    }
+  }
+
+  &__text {
+    width: 90rpx;
+    text-align: right;
+    font-size: 22rpx;
+    color: $yl-text-3;
+  }
+}
+
+/* 结果弹窗 */
+.modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $yl-mask;
+  animation: yl-fade-in 0.25s ease both;
+
+  &__card {
+    width: 600rpx;
+    border-radius: $yl-radius-xl;
+    background: #fff;
+    padding: 48rpx 40rpx 36rpx;
+    animation: yl-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  &__icon {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 50%;
+    margin: 0 auto 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $yl-primary-soft;
+  }
+
+  &__title {
+    display: block;
+    text-align: center;
+    font-size: 36rpx;
+    font-weight: 700;
+    color: $yl-text-1;
+  }
+
+  &__desc {
+    display: block;
+    text-align: center;
+    margin-top: 10rpx;
+    font-size: 24rpx;
+    color: $yl-text-3;
+  }
+
+  &__pwd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 32rpx;
+    padding: 24rpx 28rpx;
+    border-radius: $yl-radius;
+    background: $yl-bg-input;
+  }
+
+  &__pwd-text {
+    font-size: 36rpx;
+    font-weight: 700;
+    letter-spacing: 4rpx;
+    color: $yl-text-1;
+    font-family: Menlo, Consolas, monospace;
+  }
+
+  &__pwd-actions {
+    display: flex;
+    align-items: center;
+
+    .uni-icons {
+      margin-left: 24rpx;
+    }
+  }
+
+  &__btn {
+    margin-top: 36rpx;
+  }
+
+  &__cancel {
+    display: block;
+    text-align: center;
+    margin-top: 20rpx;
+    font-size: 26rpx;
+    color: $yl-text-3;
+  }
+}

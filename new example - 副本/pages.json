@@ -1,25 +1,107 @@
-{	
-		"pages": [ 
-			{
-				"path": "app",
-				"style": {
-								"navigationStyle":"custom"
-								
-							}
-	
-			}
-			
-		],
-		
-		"uniIdRouter": {},
-		"condition" : { 
-			"current": 0, 
-			"list": [
-				{
-					"name": "", 
-					"path": "", 
-					"query": "" 
-				}
-			]
-		}
-	}
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^yl-(.*)": "@/components/yl-$1/yl-$1.vue",
+      "^uni-(.*)": "@/uni_modules/uni-$1/components/uni-$1/uni-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "雨林通",
+        "disableScroll": true,
+        "app-plus": {
+          "bounce": "none"
+        }
+      }
+    },
+    {
+      "path": "pages/main/main",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "雨林通",
+        "disableScroll": true,
+        "app-plus": {
+          "bounce": "none"
+        }
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/login/register",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/login/findpassword",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "找回密码"
+      }
+    },
+    {
+      "path": "pages/identify/identify",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "植物识别"
+      }
+    },
+    {
+      "path": "pages/plant/plantdetail",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "植物详情"
+      }
+    },
+    {
+      "path": "pages/about/about",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "关于雨林通"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationStyle": "custom",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "雨林通",
+    "navigationBarBackgroundColor": "#F4F7F5",
+    "backgroundColor": "#F4F7F5",
+    "backgroundColorTop": "#F4F7F5",
+    "backgroundColorBottom": "#F4F7F5",
+    "app-plus": {
+      "background": "#F4F7F5",
+      "scrollIndicator": "none"
+    },
+    "h5": {
+      "titleNView": false
+    }
+  },
+  "uniIdRouter": {},
+  "condition": {
+    "current": 0,
+    "list": [
+      {
+        "name": "启动页",
+        "path": "pages/index/index",
+        "query": ""
+      },
+      {
+        "name": "主页",
+        "path": "pages/main/main",
+        "query": ""
+      }
+    ]
+  }
+}

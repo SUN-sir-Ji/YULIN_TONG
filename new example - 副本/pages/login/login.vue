@@ -1,314 +1,178 @@
 <template>
-	<view>
-		<view class="content">
-            <image class="logo" src="\static\logo.png" />
-			<view class="rectangle">
-	            <text class="title">Welcome to Login</text>
-			    <view class="input">
-                <!-- 用户名输入框 -->
-                <input 
-                    class="input-box1" 
-                    placeholder="用户名" 
-                    v-model="username" 
-                />
-                <!-- 密码输入框 -->
-                <input 
-                    class="input-box2" 
-                    placeholder="密码" 
-                    v-model="password" 
-			    type="password" 
-                />
-                
-                </view>
-                <view class="find-password" @click="goToFindPassword">忘记密码</view>
-			    <view class="sign-in-button" @click="handleLogin"> 登     录</view>
-	            <view class="rejister-box" >
-			        <text >没有账号？点击</text>
-				    <view class="rejister-page" @click="goToRegister">注册</view>
-			    </view> 
-			</view>            
-			
-		</view>
-	</view>
+  <view class="auth yl-page">
+    <view class="auth__deco">
+      <view class="auth__orb auth__orb--1"></view>
+      <view class="auth__orb auth__orb--2"></view>
+    </view>
+
+    <yl-navbar title="" transparent back-to="/pages/index/index"></yl-navbar>
+
+    <view class="auth__body yl-container">
+      <!-- 头部文案 -->
+      <view class="auth__head yl-anim-up">
+        <view class="auth__badge">
+          <image class="auth__badge-logo" src="/static/logo.png" mode="aspectFit"></image>
+        </view>
+        <text class="auth__title">欢迎回来 👋</text>
+        <text class="auth__desc">登录后可同步你的识别记录，继续探索雨林</text>
+      </view>
+
+      <!-- 表单 -->
+      <view class="auth__card yl-anim-up yl-delay-1">
+        <view class="field" :class="{ 'is-focus': focus === 'username', 'is-error': errors.username }">
+          <view class="field__icon">
+            <uni-icons type="person-filled" size="20" :color="focus === 'username' ? '#1DA462' : '#9AA5A0'"></uni-icons>
+          </view>
+          <input
+            class="field__input"
+            type="number"
+            v-model="form.username"
+            placeholder="用户 ID（数字）"
+            placeholder-class="field__placeholder"
+            maxlength="20"
+            confirm-type="next"
+            @focus="focus = 'username'"
+            @blur="focus = ''"
+            @input="errors.username = ''"
+          />
+          <view v-if="form.username" class="field__clear" @click="form.username = ''">
+            <uni-icons type="clear" size="18" color="#C3CBC7"></uni-icons>
+          </view>
+        </view>
+        <text v-if="errors.username" class="field__error">{{ errors.username }}</text>
+
+        <view class="field" :class="{ 'is-focus': focus === 'password', 'is-error': errors.password }">
+          <view class="field__icon">
+            <uni-icons type="locked-filled" size="20" :color="focus === 'password' ? '#1DA462' : '#9AA5A0'"></uni-icons>
+          </view>
+          <input
+            class="field__input"
+            :password="!showPwd"
+            v-model="form.password"
+            placeholder="密码"
+            placeholder-class="field__placeholder"
+            maxlength="64"
+            confirm-type="done"
+            @focus="focus = 'password'"
+            @blur="focus = ''"
+            @input="errors.password = ''"
+            @confirm="submit"
+          />
+          <view class="field__clear" @click="showPwd = !showPwd">
+            <uni-icons :type="showPwd ? 'eye-filled' : 'eye-slash-filled'" size="20" color="#9AA5A0"></uni-icons>
+          </view>
+        </view>
+        <text v-if="errors.password" class="field__error">{{ errors.password }}</text>
+
+        <view class="auth__row">
+          <view class="auth__remember" @click="remember = !remember">
+            <view class="auth__check" :class="{ 'is-on': remember }">
+              <uni-icons v-if="remember" type="checkmarkempty" size="12" color="#fff"></uni-icons>
+            </view>
+            <text>记住账号</text>
+          </view>
+          <text class="auth__link" hover-class="yl-hover" @click="go('/pages/login/findpassword')">忘记密码？</text>
+        </view>
+
+        <button class="yl-btn yl-btn--primary auth__submit" :disabled="loading" hover-class="yl-press" @click="submit">
+          <view v-if="loading" class="yl-spinner auth__spinner"></view>
+          <text>{{ loading ? '登录中…' : '登 录' }}</text>
+        </button>
+      </view>
+
+      <view class="auth__foot yl-anim-up yl-delay-2">
+        <text class="auth__foot-text">还没有账号？</text>
+        <text class="auth__foot-link" hover-class="yl-hover" @click="go('/pages/login/register')">立即注册</text>
+      </view>
+
+      <view class="auth__guest yl-anim-up yl-delay-3" hover-class="yl-hover" @click="guest">
+        <uni-icons type="navigate" size="14" color="#9AA5A0"></uni-icons>
+        <text>暂不登录，先逛逛</text>
+      </view>
+    </view>
+  </view>
 </template>
 
 <script>
-import API_CONFIG from '../../utils/apiConfig.js';
-	export default {
-		data() {
-			return {
-                // 定义用户名和密码
-				username: '',
-				password: '',
-                // 加载状态
-                isLoading: false
-			}
-		},
-		methods: {
-            // 登录处理函数
-            handleLogin() {
-                // 表单验证
-                if (!this.validateForm()) {
-                    return;
-                }
-                
-                this.isLoading = true;
-                
-                // 调用登录API
-                this.loginApi().then(res => {
-                    this.isLoading = false;
-                    // 处理登录结果
-                    if (res.code === 200 && res.message === 'success') {
-                        // 登录成功，保存用户信息
-                        this.saveLoginState(res.data);
-                        // 跳转到首页
-                        this.$emit('goToHomepage');
-                    } else {
-                        // 登录失败，显示错误信息
-                        uni.showToast({
-                            title: res.message || '登录失败，请重试',
-                            icon: 'none',
-                            duration: 2000
-                        });
-                    }
-                }).catch(err => {
-                    this.isLoading = false;
-                    // 网络错误处理
-                    uni.showToast({
-                        title: '网络连接失败，请检查网络',
-                        icon: 'none',
-                        duration: 2000
-                    });
-                    console.error('登录请求失败:', err);
-                });
-            },
-            
-            // 表单验证
-            validateForm() {
-                if (!this.username.trim()) {
-                    uni.showToast({
-                        title: '请输入用户名',
-                        icon: 'none'
-                    });
-                    return false;
-                }
-                
-                if (!this.password) {
-                    uni.showToast({
-                        title: '请输入密码',
-                        icon: 'none'
-                    });
-                    return false;
-                }
-                
-                if (this.password.length < 6) {
-                    uni.showToast({
-                        title: '密码长度不能少于6位',
-                        icon: 'none'
-                    });
-                    return false;
-                }
-                
-                return true;
-            },
-            
-            // 登录API调用 - 适配提供的接口文档
-            // 在loginApi方法中修改API地址
-            loginApi() {
-                return new Promise((resolve, reject) => {
-                    //固定为FastAPI后端的实际地址，请根据实际情况修改
-                    const apiUrl = API_CONFIG.baseUrl + API_CONFIG.login;
-                    
-                    uni.request({
-                        url: apiUrl,
-                        method: 'POST',
-                        data: {
-                            username: this.username,
-                            password: this.password
-                            // 已删除remember参数
-                        },
-                        header: {
-                            'content-type': 'application/json'
-                        },
-                        success: (res) => {
-                            resolve(res.data);
-                        },
-                        fail: (err) => {
-                            reject(err);
-                        }
-                    });
-                });
-            },
-            
-            // 保存登录状态
-            saveLoginState(userData) {
-                // 根据接口文档的响应数据结构保存信息
-                if (userData) {
-                    // 存储用户基本信息
-                    const userInfo = {
-                        userId: userData.userId,
-                        username: userData.username
-                    };
-                    uni.setStorageSync('userInfo', userInfo);
-                    
-                    // 存储token
-                    if (userData.token) {
-                        uni.setStorageSync('token', userData.token);
-                    }
-                    
-                    // 记录登录状态
-                    uni.setStorageSync('isLoggedIn', true);
-                }
-            },
-            
-            // 页面跳转方法
-            goToFindPassword() {
-                this.$emit('goToFindPassword');
-            },
-            
-            goToRegister() {
-                this.$emit('goToRegister');
-            },
-            
-            goToIndex() {
-                this.$emit('goToIndex');
-            }
-		}
-	}
+import { login } from '@/utils/api.js'
+import { saveLogin } from '@/utils/auth.js'
+
+const KEY_REMEMBER = 'yl_remember_username'
+
+export default {
+  data() {
+    return {
+      form: { username: '', password: '' },
+      errors: { username: '', password: '' },
+      focus: '',
+      showPwd: false,
+      remember: true,
+      loading: false
+    }
+  },
+  onLoad(options) {
+    const remembered = uni.getStorageSync(KEY_REMEMBER)
+    if (remembered) this.form.username = String(remembered)
+    if (options && options.username) this.form.username = String(options.username)
+  },
+  methods: {
+    validate() {
+      let ok = true
+      const u = (this.form.username || '').trim()
+      if (!u) {
+        this.errors.username = '请输入用户 ID'
+        ok = false
+      } else if (!/^\d+$/.test(u)) {
+        this.errors.username = '用户 ID 必须为纯数字'
+        ok = false
+      }
+      if (!this.form.password) {
+        this.errors.password = '请输入密码'
+        ok = false
+      } else if (this.form.password.length < 6) {
+        this.errors.password = '密码长度不能少于 6 位'
+        ok = false
+      }
+      return ok
+    },
+    async submit() {
+      if (this.loading || !this.validate()) return
+      this.loading = true
+      try {
+        const res = await login(this.form.username.trim(), this.form.password)
+        if (res && res.code === 200 && res.data) {
+          saveLogin(res.data)
+          if (this.remember) uni.setStorageSync(KEY_REMEMBER, this.form.username.trim())
+          else uni.removeStorageSync(KEY_REMEMBER)
+
+          uni.showToast({ title: '登录成功', icon: 'success', duration: 1200 })
+          setTimeout(() => {
+            uni.reLaunch({ url: '/pages/main/main' })
+          }, 600)
+        } else {
+          uni.showToast({ title: (res && res.message) || '登录失败，请重试', icon: 'none' })
+        }
+      } catch (e) {
+        const msg = (e && e.message) || '登录失败，请重试'
+        if (e && e.statusCode === 401) {
+          if (/密码/.test(msg)) this.errors.password = msg
+          else this.errors.username = msg
+        }
+        uni.showToast({ title: msg, icon: 'none', duration: 2200 })
+      } finally {
+        this.loading = false
+      }
+    },
+    go(url) {
+      uni.navigateTo({ url })
+    },
+    guest() {
+      uni.reLaunch({ url: '/pages/main/main' })
+    }
+  }
+}
 </script>
 
-<style>
-    .content {
-    	display: flex;
-    			flex-direction: column;
-    			opacity: 1;
-    			width: 100vw;
-    			height: 100vh;
-    			background: linear-gradient(0deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), linear-gradient(180deg, rgba(0, 255, 242, 0.2) 0%, rgba(90, 252, 3, 0.2) 100%);
-    			align-items: center;
-    }
-    
-    /* 已删除记住我和checkbox相关样式 */
-    
-    /* 其他原有样式保持不变 */
-    .title
-	{   
-		display: flex;
-		margin: auto;
-	    margin-top: 10%;
-		margin-bottom: 20%;
-        width: 450rpx;
-        opacity: 1;
-        color: rgba(0, 0, 0, 1);
-        /** 文本1 */
-        font-size: 50rpx;
-        font-weight: 400;
-        letter-spacing: 0rpx;
-        line-height: 34.75rpx;
-        color: rgba(0, 0, 0, 1);
-        vertical-align: top;
-		text-align: center;
-	}
-	.logo {
-		margin-top: 20%;
-		width:200rpx;
-		height:200rpx;
-		opacity: 1;
-	}
-	.rectangle {
-	 margin-top: 5%;
-	 width: 75%;
-	 padding:10rpx;
-	 opacity: 1;
-	 border-radius: 55rpx;
-	 background: rgba(241, 240, 240, 0.347);
-	 border: 0.2rpx solid rgba(0, 0, 0, 1);
-	}
-	.input-box1 {
-		display: flex;
-		text-align: center;
-		margin: auto;
-		width: 480rpx;
-		height: 80rpx;
-		opacity: 1;
-        border-radius: 30rpx;
-        background: rgba(255, 255, 255, 0.9);
-		padding: 0 20rpx;
-		   box-sizing: border-box;
-		}
-	.input-box2 {
-		display: flex;
-		text-align: center;
-		margin: auto;
-	    margin-top: 10rpx;
-		width: 480rpx;
-		height: 80rpx;
-		opacity: 1;
-        border-radius: 30rpx;
-        background: rgba(255, 255, 255, 0.9);
-		padding: 0 20rpx;
-		   box-sizing: border-box;
-		}	
-	.sign-in-button{
-		display: flex;
-		text-align: center;
-		margin: auto;
-	    margin-top: 20%;
-	  width: 400rpx;
-	  height: 85rpx;
-	  background: linear-gradient(0deg, rgba(80, 224, 18, 0.68), rgba(80, 224, 18, 0.68)), radial-gradient(38.73% 48.73% at 50% 51.168476563545674%, rgba(94, 201, 48, 0.9) 0%, rgba(81, 247, 10, 0.87) 3.24%, rgba(37, 199, 16, 0.9) 100%);
-	 border-radius: 45rpx;
-	 border: 0.8rpx solid rgba(0, 0, 0, 1);
-	 box-shadow: 0rpx 2rpx 1rpx  rgba(0, 0, 0, 0.25);
-	 filter: blur(1rpx);
-	 color: white;
-	 font-size: 55rpx;
-	 font-weight: 700;
-	  display: flex;
-	   justify-content: center;
-	   align-items: center;
-	  -webkit-text-stroke: 0.2rpx rgba(0, 0, 0, 1); 
-	  letter-spacing: 20rpx;
-	}
-	.sign-in-button:active {
-		opacity: 0.8;
-	}	
-	.find-password{
-		text-align: center;
-		margin:auto;
-	    margin-top: 15rpx;
-        color: rgba(86, 85, 85, 0.553);
-	    font-size: 31rpx;
-	    font-weight: 700;
-	}
-	.rejister-box{
-        color: rgba(6, 5, 5, 0.772);
-	    font-size: 30rpx;
-	    font-weight: 700rpx;
-		display: flex;
-		align-items: center; 
-		margin-left: 20%;
-		margin-top: 10%;
-		opacity: 0.8;
-	}
-  .rejister-page{
-		margin-left: 15rpx;
-		color: rgba(168, 6, 6, 0.772);
-	    font-size: 40rpx;
-	    font-weight: 700;
-  }
-  .back-button {
-        margin-top: 10%;
-		width: 100rpx;
-		height: 100rpx;
-		border-radius: 50%;
-		background-color: rgba(80, 224, 18, 0.68);
-		border: 0.8rpx solid rgba(0, 0, 0, 1);
-		box-shadow: 0rpx 2rpx 1rpx  rgba(0, 0, 0, 0.25);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		cursor: pointer;
-	}
-
+<style lang="scss" scoped>
+@import './auth.scss';
 </style>

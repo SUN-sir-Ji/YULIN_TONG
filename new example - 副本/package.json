@@ -1,27 +1,16 @@
 {
-    "id": "song-picker-tree",
-    "name": "树形选择器、级联多选、vue3版本",
-    "displayName": "树形选择器、级联多选、vue3版本",
-    "version": "1.0.0",
-    "description": "此插件参考https://ext.dcloud.net.cn/plugin?id=9966 改版，特意改来支持vue3;  持多选、单选、级联选择,现在暂时不支持数据反显;",
-    "keywords": [
-        "树形选择器",
-        "级联多选",
-        "vue3版"
-    ],
-    "dcloudext": {
-        "type": "component-vue",
-        "sale": {
-            "regular": {
-                "price": "0.00"
-            },
-            "sourcecode": {
-                "price": "0.00"
-            }
-        }
-    },
-    "uni_modules": {
-        "dependencies": [],
-        "encrypt": []
-    }
+  "name": "yulin-tong",
+  "displayName": "雨林通",
+  "version": "2.0.0",
+  "private": true,
+  "description": "雨林通 · 基于深度学习的植物识别 App（uni-app Vue3 前端）",
+  "keywords": [
+    "uni-app",
+    "vue3",
+    "植物识别",
+    "植物图鉴"
+  ],
+  "uni-app": {
+    "scripts": {}
+  }
 }

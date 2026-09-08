@@ -1,0 +1,27 @@
+{
+    "id": "song-picker-tree",
+    "name": "树形选择器、级联多选、vue3版本",
+    "displayName": "树形选择器、级联多选、vue3版本",
+    "version": "1.0.0",
+    "description": "此插件参考https://ext.dcloud.net.cn/plugin?id=9966 改版，特意改来支持vue3;  持多选、单选、级联选择,现在暂时不支持数据反显;",
+    "keywords": [
+        "树形选择器",
+        "级联多选",
+        "vue3版"
+    ],
+    "dcloudext": {
+        "type": "component-vue",
+        "sale": {
+            "regular": {
+                "price": "0.00"
+            },
+            "sourcecode": {
+                "price": "0.00"
+            }
+        }
+    },
+    "uni_modules": {
+        "dependencies": [],
+        "encrypt": []
+    }
+}

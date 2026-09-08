@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 日志 / 临时文件
+*.log
+*.tmp
+*.bak
+
+# 前端 - uni-app / HBuilderX
+unpackage/
+node_modules/
+.hbuilderx/
+
+# 上传图片（运行时生成）
+fastapi-backend/app/images/
+fastapi-backend/images/
+
+# 邮件配置（生产环境）
+.env
+.env.local
+
+# 系统文件
+desktop.ini
+$RECYCLE.BIN/
